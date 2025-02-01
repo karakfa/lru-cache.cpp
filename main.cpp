@@ -119,42 +119,75 @@ public:
     }
 };
 
+template <typename K, typename V>
+class CacheFactory {
+private:
+    static std::unordered_map<std::string, std::unique_ptr<LRUCache<K, V>>> caches;
+    static std::mutex mutex;
+
+public:
+    static void createCache(const std::string& name, int capacity) {
+        std::lock_guard<std::mutex> lock(mutex);
+        if (caches.find(name) == caches.end()) {
+            caches[name] = std::make_unique<LRUCache<K, V>>(capacity);
+        }
+    }
+
+    static LRUCache<K, V>& getCache(const std::string& name) {
+        std::lock_guard<std::mutex> lock(mutex);
+        if (caches.find(name) == caches.end()) {
+            throw std::runtime_error("Cache not found");
+        }
+        return *caches[name];
+    }
+};
+
+template <typename K, typename V>
+std::unordered_map<std::string, std::unique_ptr<LRUCache<K, V>>> CacheFactory<K,V>::caches;
+
+template <typename K, typename V>
+std::mutex CacheFactory<K,V>::mutex;
+
+
 void testLRUCache() {
     // Basic functionality tests
-    LRUCache<int, int> cache(2);
-    
+    CacheFactory<int, int>::createCache("test", 2);
+    auto& cache = CacheFactory<int, int>::getCache("test");
+
     cache.put(1, 1);
     cache.put(2, 2);
     std::cout << "Test 1: " << (cache.get(1).value_or(0) == 1 ? "PASS" : "FAIL") << std::endl;
-    
+
     cache.put(3, 3);    // evicts key 2
     std::cout << "Test 2: " << (!cache.get(2).has_value() ? "PASS" : "FAIL") << std::endl;
-    
+
     cache.put(1, 4);    // updates value of key 1
     std::cout << "Test 3: " << (cache.get(1).value_or(0) == 4 ? "PASS" : "FAIL") << std::endl;
-    
+
     cache.put(4, 4);    // evicts key 3
     std::cout << "Test 4: " << (!cache.get(3).has_value() ? "PASS" : "FAIL") << std::endl;
-    
+
     std::cout << "Test 5: " << (cache.get(4).value_or(0) == 4 ? "PASS" : "FAIL") << std::endl;
     auto [hits, misses] = cache.getStats();
     std::cout << "First test completed\n";
     std::cout << "Cache hits: " << hits << "\n";
     std::cout << "Cache misses: " << misses << "\n";
 
-    
+
     // Test with string keys and values
-    LRUCache<std::string, std::string> strCache(2);
+    CacheFactory<std::string, std::string>::createCache("str_test", 2);
+    auto& strCache = CacheFactory<std::string, std::string>::getCache("str_test");
     strCache.put(std::string{"pi"}, std::string{"3.14"});
     strCache.put(std::string{"e"}, std::string{"2.718"});
     std::cout << "Test 6: " << (strCache.get("pi").value_or("") == "3.14" ? "PASS" : "FAIL") << std::endl;
-    
+
     std::cout << "Test 7: " << (!strCache.get("phi").has_value() ? "PASS" : "FAIL") << std::endl;
 }
     // Multithreaded test
     void multithreadedTest() {
     std::cout << "\nRunning multithreaded test...\n";
-    LRUCache<int, int> mtCache(5);
+    CacheFactory<int, int>::createCache("mt_test", 5);
+    auto& mtCache = CacheFactory<int, int>::getCache("mt_test");
     std::vector<std::thread> threads;
     const int numThreads = 4;
     const int opsPerThread = 1000;
