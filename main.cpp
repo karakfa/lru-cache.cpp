@@ -123,20 +123,21 @@ template <typename K, typename V>
 class CacheFactory {
 private:
     static std::unordered_map<std::string, std::unique_ptr<LRUCache<K, V>>> caches;
-    static std::mutex mutex;
+    static std::recursive_mutex mutex;
+    static const int DEFAULT_CACHE_SIZE{100};
 
 public:
     static void createCache(const std::string& name, int capacity) {
-        std::lock_guard<std::mutex> lock(mutex);
+        std::lock_guard<std::recursive_mutex> lock(mutex);
         if (caches.find(name) == caches.end()) {
             caches[name] = std::make_unique<LRUCache<K, V>>(capacity);
         }
     }
 
     static LRUCache<K, V>& getCache(const std::string& name) {
-        std::lock_guard<std::mutex> lock(mutex);
+        std::lock_guard<std::recursive_mutex> lock(mutex);
         if (caches.find(name) == caches.end()) {
-            throw std::runtime_error("Cache not found");
+            createCache(name, DEFAULT_CACHE_SIZE);
         }
         return *caches[name];
     }
@@ -146,7 +147,7 @@ template <typename K, typename V>
 std::unordered_map<std::string, std::unique_ptr<LRUCache<K, V>>> CacheFactory<K,V>::caches;
 
 template <typename K, typename V>
-std::mutex CacheFactory<K,V>::mutex;
+std::recursive_mutex CacheFactory<K,V>::mutex;
 
 
 void testLRUCache() {
@@ -176,7 +177,7 @@ void testLRUCache() {
 
     // Test with string keys and values
     CacheFactory<std::string, std::string>::createCache("str_test", 2);
-    auto& strCache = CacheFactory<std::string, std::string>::getCache("str_test");
+    auto& strCache = CacheFactory<std::string, std::string>::getCache("str_test4");
     strCache.put(std::string{"pi"}, std::string{"3.14"});
     strCache.put(std::string{"e"}, std::string{"2.718"});
     std::cout << "Test 6: " << (strCache.get("pi").value_or("") == "3.14" ? "PASS" : "FAIL") << std::endl;
