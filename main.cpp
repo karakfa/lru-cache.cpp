@@ -146,6 +146,8 @@ public:
 template <typename K, typename V>
 std::unordered_map<std::string, std::unique_ptr<LRUCache<K, V>>> CacheFactory<K,V>::caches;
 
+template <typename K, typename V>
+std::recursive_mutex CacheFactory<K,V>::mutex;
 
 void testLRUCache() {
     // Basic functionality tests
