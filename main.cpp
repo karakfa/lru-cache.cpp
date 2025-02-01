@@ -67,12 +67,18 @@ public:
         }
     }
 
-    ~LRUCache() {
+    void reset() {
         while (head) {
             Node* temp = head;
             head = head->next;
             delete temp;
         }
+        cache.clear();
+        tail = nullptr;
+    }
+
+    ~LRUCache() {
+        reset();
     }
 };
 
