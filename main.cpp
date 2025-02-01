@@ -25,7 +25,6 @@ private:
         if (node->next) node->next->prev = node->prev;
         if (node == head) head = node->next;
         if (node == tail) tail = node->prev;
-        delete node;
     }
 
     void addNodeToHead(Node* node) {
