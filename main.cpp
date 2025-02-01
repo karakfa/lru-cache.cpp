@@ -2,6 +2,8 @@
 #include <iostream>
 #include <unordered_map>
 #include <optional>
+#include <mutex>
+#include <shared_mutex>
 
 template<typename K, typename V>
 class LRUCache {
@@ -20,6 +22,7 @@ private:
     Node* tail;
     size_t hits{0};
     size_t misses{0};
+    mutable std::shared_mutex mutex;
 
     void removeNode(Node* node) {
         if (node->prev) node->prev->next = node->next;
@@ -45,6 +48,7 @@ public:
     LRUCache(int cap) : capacity(cap), head(nullptr), tail(nullptr) {}
 
     std::optional<V> get(K key) {
+        std::unique_lock<std::shared_mutex> lock(mutex);
         if (cache.find(key) == cache.end()) {
             misses++;
             return {};
@@ -56,15 +60,18 @@ public:
     }
 
     std::pair<size_t, size_t> getStats() const {
+        std::shared_lock<std::shared_mutex> lock(mutex);
         return {hits, misses};
     }
 
     void resetStats() {
+        std::unique_lock<std::shared_mutex> lock(mutex);
         hits = 0;
         misses = 0;
     }
 
     void put(K key, V value) {
+        std::unique_lock<std::shared_mutex> lock(mutex);
         if (cache.find(key) != cache.end()) {
             Node* node = cache[key];
             node->value = value;
@@ -83,6 +90,7 @@ public:
     }
 
     void reset() {
+        std::unique_lock<std::shared_mutex> lock(mutex);
         while (head) {
             Node* temp = head;
             head = head->next;
