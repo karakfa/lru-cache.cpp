@@ -137,6 +137,11 @@ void testLRUCache() {
     std::cout << "Test 4: " << (!cache.get(3).has_value() ? "PASS" : "FAIL") << std::endl;
     
     std::cout << "Test 5: " << (cache.get(4).value_or(0) == 4 ? "PASS" : "FAIL") << std::endl;
+    auto [hits, misses] = cache.getStats();
+    std::cout << "First test completed\n";
+    std::cout << "Cache hits: " << hits << "\n";
+    std::cout << "Cache misses: " << misses << "\n";
+
     
     // Test with string keys and values
     LRUCache<std::string, std::string> strCache(2);
@@ -145,8 +150,9 @@ void testLRUCache() {
     std::cout << "Test 6: " << (strCache.get("pi").value_or("") == "3.14" ? "PASS" : "FAIL") << std::endl;
     
     std::cout << "Test 7: " << (!strCache.get("phi").has_value() ? "PASS" : "FAIL") << std::endl;
-
+}
     // Multithreaded test
+    void multithreadedTest() {
     std::cout << "\nRunning multithreaded test...\n";
     LRUCache<int, int> mtCache(5);
     std::vector<std::thread> threads;
@@ -159,7 +165,8 @@ void testLRUCache() {
             int key = (threadId * opsPerThread + i) % 10;
             if (i % 2 == 0) {
                 mtCache.put(key, threadId);
-            } else {
+            } 
+            if (i % 3 == 0 ) {
                 auto val = mtCache.get(key);
                 if (val.has_value()) {
                     successCount++;
@@ -188,6 +195,7 @@ void testLRUCache() {
 int main() {
     std::cout << "Running LRU Cache tests...\n";
     testLRUCache();
+    multithreadedTest();
     std::cout << "All tests done!\n";
     return 0;
 }
