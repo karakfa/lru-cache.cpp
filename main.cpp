@@ -1,8 +1,7 @@
+
 #include <iostream>
 #include <unordered_map>
 #include <optional>
-
-using namespace std;
 
 template<typename K, typename V>
 class LRUCache {
@@ -16,7 +15,7 @@ private:
     };
 
     int capacity;
-    unordered_map<K, Node*> cache{};
+    std::unordered_map<K, Node*> cache{};
     Node* head;
     Node* tail;
 
@@ -43,7 +42,7 @@ private:
 public:
     LRUCache(int cap) : capacity(cap), head(nullptr), tail(nullptr) {}
 
-    optional<V> get(K key) {
+    std::optional<V> get(K key) {
         if (cache.find(key) == cache.end()) return {};
         Node* node = cache[key];
         moveToHead(node);
@@ -97,9 +96,9 @@ void testLRUCache() {
     std::cout << "Test 5: " << (cache.get(4).value_or(0) == 4 ? "PASS" : "FAIL") << std::endl;
 
     // Test with string keys and double values
-    LRUCache<string, string> strCache(2);
-    strCache.put(string{"pi"}, string{"3.14"});
-    strCache.put(string{"e"}, string{"2.718"});
+    LRUCache<std::string, std::string> strCache(2);
+    strCache.put(std::string{"pi"}, std::string{"3.14"});
+    strCache.put(std::string{"e"}, std::string{"2.718"});
     std::cout << "Test 6: " << (strCache.get("pi").value_or("") == "3.14" ? "PASS" : "FAIL") << std::endl;
 
     std::cout << "Test 7: " << (!strCache.get("phi").has_value() ? "PASS" : "FAIL") << std::endl;
