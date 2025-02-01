@@ -16,7 +16,7 @@ private:
     };
 
     int capacity;
-    unordered_map<K, Node*> cache;
+    unordered_map<K, Node*> cache{};
     Node* head;
     Node* tail;
 
@@ -43,14 +43,14 @@ private:
 public:
     LRUCache(int cap) : capacity(cap), head(nullptr), tail(nullptr) {}
 
-    int get(int key) {
+    V get(K key) {
         if (cache.find(key) == cache.end()) return -1;
         Node* node = cache[key];
         moveToHead(node);
         return node->value;
     }
 
-    void put(int key, int value) {
+    void put(K key, V value) {
         if (cache.find(key) != cache.end()) {
             Node* node = cache[key];
             node->value = value;
@@ -98,9 +98,11 @@ void testLRUCache() {
 
     // Test with string keys and double values
     LRUCache<string, double> strCache(2);
-    strCache.put("pi", 3.14);
-    strCache.put("e", 2.718);
+    strCache.put(string{"pi"}, 3.14);
+    strCache.put(string{"e"}, 2.718);
     std::cout << "Test 6: " << (abs(strCache.get("pi") - 3.14) < 0.001 ? "PASS" : "FAIL") << std::endl;
+
+     std::cout << "Test 7: " << (strCache.get("phi") == -1 ? "PASS" : "FAIL") << std::endl;
 }
 
 int main() {

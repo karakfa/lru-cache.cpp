@@ -4,18 +4,19 @@
 
 using namespace std;
 
+template<typename K, typename V>
 class LRUCache {
 private:
     struct Node {
-        int key;
-        int value;
+        K key;
+        V value;
         Node* prev;
         Node* next;
-        Node(int k, int v) : key(k), value(v), prev(nullptr), next(nullptr) {}
+        Node(const K& k, const V& v) : key(k), value(v), prev(nullptr), next(nullptr) {}
     };
 
     int capacity;
-    unordered_map<int, Node*> cache;
+    unordered_map<K, Node*> cache{};
     Node* head;
     Node* tail;
 
@@ -42,14 +43,14 @@ private:
 public:
     LRUCache(int cap) : capacity(cap), head(nullptr), tail(nullptr) {}
 
-    int get(int key) {
+    V get(K key) {
         if (cache.find(key) == cache.end()) return -1;
         Node* node = cache[key];
         moveToHead(node);
         return node->value;
     }
 
-    void put(int key, int value) {
+    void put(K key, V value) {
         if (cache.find(key) != cache.end()) {
             Node* node = cache[key];
             node->value = value;
@@ -77,7 +78,8 @@ public:
 };
 
 void testLRUCache() {
-    LRUCache cache(2);
+    // Test with int keys and values
+    LRUCache<int, int> cache(2);
     
     cache.put(1, 1);
     cache.put(2, 2);
@@ -93,6 +95,14 @@ void testLRUCache() {
     std::cout << "Test 4: " << (cache.get(3) == -1 ? "PASS" : "FAIL") << std::endl;
     
     std::cout << "Test 5: " << (cache.get(4) == 4 ? "PASS" : "FAIL") << std::endl;
+
+    // Test with string keys and double values
+    LRUCache<string, double> strCache(2);
+    strCache.put(string{"pi"}, 3.14);
+    strCache.put(string{"e"}, 2.718);
+    std::cout << "Test 6: " << (abs(strCache.get("pi") - 3.14) < 0.001 ? "PASS" : "FAIL") << std::endl;
+
+     std::cout << "Test 7: " << (strCache.get("phi") == -1 ? "PASS" : "FAIL") << std::endl;
 }
 
 int main() {
