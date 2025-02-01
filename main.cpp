@@ -1,9 +1,10 @@
-
 #include <iostream>
 #include <unordered_map>
 #include <optional>
 #include <mutex>
 #include <shared_mutex>
+
+
 
 template<typename K, typename V>
 class LRUCache {
@@ -44,8 +45,24 @@ private:
         addNodeToHead(node);
     }
 
+    void doReset() {
+        while (head) {
+            Node* temp = head;
+            head = head->next;
+            delete temp;
+        }
+        cache.clear();
+        tail = nullptr;
+        resetStats();
+    }
+
 public:
+
     LRUCache(int cap) : capacity(cap), head(nullptr), tail(nullptr) {}
+
+    LRUCache() {
+        LRUCache(10);   // default size
+    }
 
     std::optional<V> get(K key) {
         std::unique_lock<std::shared_mutex> lock(mutex);
@@ -91,24 +108,11 @@ public:
 
     void reset() {
         std::unique_lock<std::shared_mutex> lock(mutex);
-        while (head) {
-            Node* temp = head;
-            head = head->next;
-            delete temp;
-        }
-        cache.clear();
-        tail = nullptr;
-        resetStats();
+        doReset();
     }
 
     ~LRUCache() {
-        while (head) {
-            Node* temp = head;
-            head = head->next;
-            delete temp;
-        }
-        cache.clear();
-        tail = nullptr;
+        doReset();
     }
 };
 
@@ -143,5 +147,6 @@ void testLRUCache() {
 int main() {
     std::cout << "Running LRU Cache tests...\n";
     testLRUCache();
+    std::cout << "All tests done!\n";
     return 0;
 }
