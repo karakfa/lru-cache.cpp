@@ -1,94 +1,73 @@
-
 #include <iostream>
 #include <unordered_map>
-#include <memory>
 
 using namespace std;
 
-template<typename K, typename V>
+class Node {
+public:
+    int key;
+    int value;
+    Node* prev;
+    Node* next;
+
+    Node(int k, int v) : key(k), value(v), prev(nullptr), next(nullptr) {}
+};
+
+
 class LRUCache {
 private:
-    struct Node {
-        K key;
-        V value;
-        unique_ptr<Node> next;
-        weak_ptr<Node> prev;  // Use weak_ptr to avoid circular reference
-        Node(K k, V v) : key(k), value(v) {}
-    };
-
     int capacity;
-    unordered_map<K, shared_ptr<Node>> cache;
-    shared_ptr<Node> head;
-    shared_ptr<Node> tail;
+    unordered_map<int, Node*> cache;
+    Node* head;
+    Node* tail;
 
-    void removeNode(shared_ptr<Node> node) {
-        if (auto prevNode = node->prev.lock()) {
-            prevNode->next = std::move(node->next);
-            if (node->next) {
-                node->next->prev = prevNode;
-            }
-        } else {
-            head = std::move(node->next);
-            if (head) {
-                head->prev.reset();
-            }
-        }
-        
-        if (node == tail) {
-            tail = node->prev.lock();
-        }
+    void removeNode(Node* node) {
+        if (node->prev) node->prev->next = node->next;
+        if (node->next) node->next->prev = node->prev;
+        if (node == head) head = node->next;
+        if (node == tail) tail = node->prev;
     }
 
-    void addNodeToHead(shared_ptr<Node> node) {
-        node->next = nullptr;
-        node->prev.reset();
-        if (head) {
-            node->next = std::move(head);
-            node->next->prev = node;
-        }
+    void addNodeToHead(Node* node) {
+        node->next = head;
+        node->prev = nullptr;
+        if (head) head->prev = node;
         head = node;
-        if (!tail) {
-            tail = head;
-        }
+        if (!tail) tail = head;
     }
 
-    void moveToHead(shared_ptr<Node> node) {
-        if (node != head) {
-            removeNode(node);
-            addNodeToHead(node);
-        }
+    void moveToHead(Node* node) {
+        removeNode(node);
+        addNodeToHead(node);
+    }
+
+    Node* removeTail() {
+        Node* node = tail;
+        removeNode(tail);
+        return node;
     }
 
 public:
-    LRUCache(int cap) : capacity(cap) {}
+    LRUCache(int cap) : capacity(cap), head(nullptr), tail(nullptr) {}
 
-    V get(K key) {
-        if (cache.find(key) == cache.end()) {
-            throw runtime_error("Key not found");
-        }
-        auto node = cache[key];
+    int get(int key) {
+        if (cache.find(key) == cache.end()) return -1;
+        Node* node = cache[key];
         moveToHead(node);
         return node->value;
     }
 
-    void put(K key, V value) {
+    void put(int key, int value) {
         if (cache.find(key) != cache.end()) {
-            cache[key]->value = value;
-            moveToHead(cache[key]);
+            Node* node = cache[key];
+            node->value = value;
+            moveToHead(node);
         } else {
-            auto newNode = make_shared<Node>(key, value);
+            Node* newNode = new Node(key, value);
             if (cache.size() >= capacity) {
-                if (tail) {
-                    cache.erase(tail->key);
-                    auto prevTail = tail->prev.lock();
-                    if (prevTail) {
-                        prevTail->next = nullptr;
-                        tail = prevTail;
-                    } else {
-                        head = nullptr;
-                        tail = nullptr;
-                    }
-                }
+                Node* tailNode = removeTail();
+                cache.erase(tailNode->key);
+                delete tailNode;
             }
             cache[key] = newNode;
             addNodeToHead(newNode);
@@ -96,27 +75,37 @@ public:
     }
 };
 
+
+
+
+
 void testLRUCache() {
-    LRUCache<int, string> cache(2);
+    // Test case 1: Basic operations
+    LRUCache cache(2);
     
-    cache.put(1, "one");
-    cache.put(2, "two");
-    cout << "Test 1: " << (cache.get(1) == "one" ? "PASS" : "FAIL") << endl;
+    // Test put operation
+    cache.put(1, 1);
+    cache.put(2, 2);
+    std::cout << "Test 1: " << (cache.get(1) == 1 ? "PASS" : "FAIL") << std::endl;
     
-    cache.put(3, "three");  // evicts 2
-    try {
-        cache.get(2);
-        cout << "Test 2: FAIL" << endl;
-    } catch (runtime_error&) {
-        cout << "Test 2: PASS" << endl;
-    }
+    // Test eviction
+    cache.put(3, 3);    // evicts key 2
+    std::cout << "Test 2: " << (cache.get(2) == -1 ? "PASS" : "FAIL") << std::endl;
     
-    cache.put(1, "ONE");
-    cout << "Test 3: " << (cache.get(1) == "ONE" ? "PASS" : "FAIL") << endl;
+    // Test updating existing key
+    cache.put(1, 4);    // updates value of key 1
+    std::cout << "Test 3: " << (cache.get(1) == 4 ? "PASS" : "FAIL") << std::endl;
+    
+    // Test capacity constraint
+    cache.put(4, 4);    // evicts key 3
+    std::cout << "Test 4: " << (cache.get(3) == -1 ? "PASS" : "FAIL") << std::endl;
+    
+    // Test accessing existing key
+    std::cout << "Test 5: " << (cache.get(4) == 4 ? "PASS" : "FAIL") << std::endl;
 }
 
 int main() {
-    cout << "Running LRU Cache tests...\n";
+    std::cout << "Running LRU Cache tests...\n";
     testLRUCache();
     return 0;
 }
