@@ -1,6 +1,6 @@
-
 #include <iostream>
 #include <unordered_map>
+#include <optional>
 
 using namespace std;
 
@@ -43,8 +43,8 @@ private:
 public:
     LRUCache(int cap) : capacity(cap), head(nullptr), tail(nullptr) {}
 
-    V get(K key) {
-        if (cache.find(key) == cache.end()) return -1;
+    std::optional<V> get(K key) {
+        if (cache.find(key) == cache.end()) return std::nullopt;
         Node* node = cache[key];
         moveToHead(node);
         return node->value;
@@ -80,29 +80,29 @@ public:
 void testLRUCache() {
     // Test with int keys and values
     LRUCache<int, int> cache(2);
-    
+
     cache.put(1, 1);
     cache.put(2, 2);
-    std::cout << "Test 1: " << (cache.get(1) == 1 ? "PASS" : "FAIL") << std::endl;
-    
+    std::cout << "Test 1: " << (cache.get(1).value_or(0) == 1 ? "PASS" : "FAIL") << std::endl;
+
     cache.put(3, 3);    // evicts key 2
-    std::cout << "Test 2: " << (cache.get(2) == -1 ? "PASS" : "FAIL") << std::endl;
-    
+    std::cout << "Test 2: " << (!cache.get(2).has_value() ? "PASS" : "FAIL") << std::endl;
+
     cache.put(1, 4);    // updates value of key 1
-    std::cout << "Test 3: " << (cache.get(1) == 4 ? "PASS" : "FAIL") << std::endl;
-    
+    std::cout << "Test 3: " << (cache.get(1).value_or(0) == 4 ? "PASS" : "FAIL") << std::endl;
+
     cache.put(4, 4);    // evicts key 3
-    std::cout << "Test 4: " << (cache.get(3) == -1 ? "PASS" : "FAIL") << std::endl;
-    
-    std::cout << "Test 5: " << (cache.get(4) == 4 ? "PASS" : "FAIL") << std::endl;
+    std::cout << "Test 4: " << (!cache.get(3).has_value() ? "PASS" : "FAIL") << std::endl;
+
+    std::cout << "Test 5: " << (cache.get(4).value_or(0) == 4 ? "PASS" : "FAIL") << std::endl;
 
     // Test with string keys and double values
     LRUCache<string, double> strCache(2);
     strCache.put(string{"pi"}, 3.14);
     strCache.put(string{"e"}, 2.718);
-    std::cout << "Test 6: " << (abs(strCache.get("pi") - 3.14) < 0.001 ? "PASS" : "FAIL") << std::endl;
+    std::cout << "Test 6: " << (abs(strCache.get("pi").value_or(0) - 3.14) < 0.001 ? "PASS" : "FAIL") << std::endl;
 
-     std::cout << "Test 7: " << (strCache.get("phi") == -1 ? "PASS" : "FAIL") << std::endl;
+    std::cout << "Test 7: " << (!strCache.get("phi").has_value() ? "PASS" : "FAIL") << std::endl;
 }
 
 int main() {
