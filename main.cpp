@@ -90,6 +90,7 @@ public:
         }
         cache.clear();
         tail = nullptr;
+        resetStats();
     }
 
     ~LRUCache() {

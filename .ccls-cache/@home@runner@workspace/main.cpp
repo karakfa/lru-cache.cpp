@@ -18,6 +18,8 @@ private:
     std::unordered_map<K, Node*> cache{};
     Node* head;
     Node* tail;
+    size_t hits{0};
+    size_t misses{0};
 
     void removeNode(Node* node) {
         if (node->prev) node->prev->next = node->next;
@@ -43,10 +45,23 @@ public:
     LRUCache(int cap) : capacity(cap), head(nullptr), tail(nullptr) {}
 
     std::optional<V> get(K key) {
-        if (cache.find(key) == cache.end()) return {};
+        if (cache.find(key) == cache.end()) {
+            misses++;
+            return {};
+        }
+        hits++;
         Node* node = cache[key];
         moveToHead(node);
         return node->value;
+    }
+
+    std::pair<size_t, size_t> getStats() const {
+        return {hits, misses};
+    }
+
+    void resetStats() {
+        hits = 0;
+        misses = 0;
     }
 
     void put(K key, V value) {
@@ -75,6 +90,7 @@ public:
         }
         cache.clear();
         tail = nullptr;
+        resetStats();
     }
 
     ~LRUCache() {
