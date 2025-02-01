@@ -1,21 +1,19 @@
+
 #include <iostream>
 #include <unordered_map>
 
 using namespace std;
 
-class Node {
-public:
-    int key;
-    int value;
-    Node* prev;
-    Node* next;
-
-    Node(int k, int v) : key(k), value(v), prev(nullptr), next(nullptr) {}
-};
-
-
 class LRUCache {
 private:
+    struct Node {
+        int key;
+        int value;
+        Node* prev;
+        Node* next;
+        Node(int k, int v) : key(k), value(v), prev(nullptr), next(nullptr) {}
+    };
+
     int capacity;
     unordered_map<int, Node*> cache;
     Node* head;
@@ -41,12 +39,6 @@ private:
         addNodeToHead(node);
     }
 
-    Node* removeTail() {
-        Node* node = tail;
-        removeNode(tail);
-        return node;
-    }
-
 public:
     LRUCache(int cap) : capacity(cap), head(nullptr), tail(nullptr) {}
 
@@ -65,7 +57,8 @@ public:
         } else {
             Node* newNode = new Node(key, value);
             if (cache.size() >= capacity) {
-                Node* tailNode = removeTail();
+                Node* tailNode = tail;
+                removeNode(tail);
                 cache.erase(tailNode->key);
                 delete tailNode;
             }
@@ -73,34 +66,32 @@ public:
             addNodeToHead(newNode);
         }
     }
+
+    ~LRUCache() {
+        while (head) {
+            Node* temp = head;
+            head = head->next;
+            delete temp;
+        }
+    }
 };
 
-
-
-
-
 void testLRUCache() {
-    // Test case 1: Basic operations
     LRUCache cache(2);
     
-    // Test put operation
     cache.put(1, 1);
     cache.put(2, 2);
     std::cout << "Test 1: " << (cache.get(1) == 1 ? "PASS" : "FAIL") << std::endl;
     
-    // Test eviction
     cache.put(3, 3);    // evicts key 2
     std::cout << "Test 2: " << (cache.get(2) == -1 ? "PASS" : "FAIL") << std::endl;
     
-    // Test updating existing key
     cache.put(1, 4);    // updates value of key 1
     std::cout << "Test 3: " << (cache.get(1) == 4 ? "PASS" : "FAIL") << std::endl;
     
-    // Test capacity constraint
     cache.put(4, 4);    // evicts key 3
     std::cout << "Test 4: " << (cache.get(3) == -1 ? "PASS" : "FAIL") << std::endl;
     
-    // Test accessing existing key
     std::cout << "Test 5: " << (cache.get(4) == 4 ? "PASS" : "FAIL") << std::endl;
 }
 
