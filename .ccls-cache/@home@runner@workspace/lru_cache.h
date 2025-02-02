@@ -1,4 +1,3 @@
-
 #ifndef LRU_CACHE_H
 #define LRU_CACHE_H
 
@@ -51,7 +50,7 @@ public:
      * @param key The key to look up
      * @return Optional containing the value if found, empty if not found
      */
-    std::optional<V> get(K key);
+    std::optional<V> get(const K& key);
 
     /**
      * Returns cache hit/miss statistics
