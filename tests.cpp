@@ -1,13 +1,13 @@
-
 #include "lru_cache.h"
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <chrono>
 
 void testLRUCache() {
     CacheHolder<int, int> holder(2);
     auto& cache = holder.getCache();
-    
+
     cache.put(1, 1);
     cache.put(2, 2);
     std::cout << "Test 1: " << (cache.get(1).value_or(0) == 1 ? "PASS" : "FAIL") << std::endl;
@@ -72,4 +72,17 @@ void multithreadedTest() {
     std::cout << "Cache hits: " << hits << "\n";
     std::cout << "Cache misses: " << misses << "\n";
     std::cout << "Successful retrievals: " << successCount << "\n";
+}
+
+int main() {
+    auto start = std::chrono::high_resolution_clock::now();
+
+    std::cout << "Running LRU Cache tests...\n";
+    testLRUCache();
+    multithreadedTest();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+    std::cout << "All tests done in " << duration.count() << "ms!\n";
+    return 0;
 }
