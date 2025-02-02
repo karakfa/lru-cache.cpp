@@ -100,28 +100,6 @@ LRUCache<K,V>::~LRUCache() {
     doReset();
 }
 
-// CacheFactory implementation
-template <typename K, typename V>
-std::unordered_map<std::string, std::unique_ptr<LRUCache<K, V>>> CacheFactory<K,V>::caches;
-
-template <typename K, typename V>
-std::recursive_mutex CacheFactory<K,V>::mutex;
-
-template <typename K, typename V>
-void CacheFactory<K,V>::createCache(const std::string& name, int capacity) {
-    std::lock_guard<std::recursive_mutex> lock(mutex);
-    if (caches.find(name) == caches.end()) {
-        caches[name] = std::make_unique<LRUCache<K, V>>(capacity);
-    }
-}
-
-template <typename K, typename V>
-LRUCache<K, V>& CacheFactory<K,V>::getCache(const std::string& name) {
-    std::lock_guard<std::recursive_mutex> lock(mutex);
-    if (caches.find(name) == caches.end()) {
-        createCache(name, DEFAULT_CACHE_SIZE);
-    }
-    return *caches[name];
-}
+// CacheHolder is fully defined in the header
 
 #endif
