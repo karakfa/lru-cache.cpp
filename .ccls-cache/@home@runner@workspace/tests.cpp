@@ -41,7 +41,7 @@ void multithreadedTest() {
     auto& mtCache = mtHolder.getCache();
     std::vector<std::thread> threads;
     const int numThreads = 4;
-    const int opsPerThread = 1000;
+    const int opsPerThread = 10000;
     std::atomic<int> successCount{0};
 
     auto threadFunc = [&](int threadId) {
