@@ -32,8 +32,8 @@ void LRUCache<K,V>::moveToHead(Node* node) {
 }
 
 template<typename K, typename V>
-std::optional<V> LRUCache<K,V>::get(const K& key) {
-    std::unique_lock<std::shared_mutex> lock(mutex);
+std::optional<const V> LRUCache<K,V>::get(const K& key) const {
+    std::shared_lock<std::shared_mutex> lock(mutex);
     if (cache.find(key) == cache.end()) {
         misses++;
         return {};
