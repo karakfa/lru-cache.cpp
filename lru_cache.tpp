@@ -3,7 +3,7 @@
 #define LRU_CACHE_TPP
 
 template<typename K, typename V>
-LRUCache<K,V>::LRUCache(int cap) : capacity(cap), head(nullptr), tail(nullptr) {}
+LRUCache<K,V>::LRUCache(size_t cap) : capacity(cap), head(nullptr), tail(nullptr) {}
 
 template<typename K, typename V>
 LRUCache<K,V>::LRUCache() : LRUCache(100) {}

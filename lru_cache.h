@@ -20,7 +20,7 @@ private:
         Node(const K& k, const V& v) : key(k), value(v), prev(nullptr), next(nullptr) {}
     };
 
-    int capacity;
+    size_t capacity;
     std::unordered_map<K, Node*> cache;
     Node* head;
     Node* tail;
@@ -34,7 +34,7 @@ private:
     void doReset();
 
 public:
-    explicit LRUCache(int cap);
+    explicit LRUCache(size_t cap);
     LRUCache();
     std::optional<V> get(K key);
     std::pair<size_t, size_t> getStats() const;
