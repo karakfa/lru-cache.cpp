@@ -34,13 +34,51 @@ private:
     void doReset();
 
 public:
+    /**
+     * Constructs an LRU cache with specified capacity
+     * @param cap The maximum number of key-value pairs the cache can hold
+     * @throws std::invalid_argument if capacity is 0
+     */
     explicit LRUCache(size_t cap);
+
+    /**
+     * Constructs an LRU cache with default capacity of 100
+     */
     LRUCache();
+
+    /**
+     * Retrieves a value associated with the given key
+     * @param key The key to look up
+     * @return Optional containing the value if found, empty if not found
+     */
     std::optional<V> get(K key);
+
+    /**
+     * Returns cache hit/miss statistics
+     * @return Pair of (hits, misses) counts
+     */
     std::pair<size_t, size_t> getStats() const;
+
+    /**
+     * Resets the hit/miss statistics to zero
+     */
     void resetStats();
+
+    /**
+     * Inserts or updates a key-value pair in the cache
+     * @param key The key to insert/update
+     * @param value The value to associate with the key
+     */
     void put(K key, V value);
+
+    /**
+     * Clears all entries from the cache
+     */
     void reset();
+
+    /**
+     * Destructor - cleans up all allocated nodes
+     */
     ~LRUCache();
 };
 
