@@ -83,15 +83,14 @@ public:
 };
 
 template <typename K, typename V>
-class CacheFactory {
+class CacheHolder {
 private:
-    static std::unordered_map<std::string, std::unique_ptr<LRUCache<K, V>>> caches;
-    static std::recursive_mutex mutex;
+    std::unique_ptr<LRUCache<K, V>> cache;
     static const int DEFAULT_CACHE_SIZE{100};
 
 public:
-    static void createCache(const std::string& name, int capacity);
-    static LRUCache<K, V>& getCache(const std::string& name);
+    CacheHolder(int capacity = DEFAULT_CACHE_SIZE) : cache(std::make_unique<LRUCache<K, V>>(capacity)) {}
+    LRUCache<K, V>& getCache() { return *cache; }
 };
 
 #include "lru_cache.tpp"  // Template implementation

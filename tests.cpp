@@ -5,8 +5,8 @@
 #include <vector>
 
 void testLRUCache() {
-    CacheFactory<int, int>::createCache("test", 2);
-    auto& cache = CacheFactory<int, int>::getCache("test");
+    CacheHolder<int, int> holder(2);
+    auto& cache = holder.getCache();
     
     cache.put(1, 1);
     cache.put(2, 2);
@@ -27,8 +27,8 @@ void testLRUCache() {
     std::cout << "Cache hits: " << hits << "\n";
     std::cout << "Cache misses: " << misses << "\n";
 
-    CacheFactory<std::string, std::string>::createCache("str_test", 2);
-    auto& strCache = CacheFactory<std::string, std::string>::getCache("str_test");
+    CacheHolder<std::string, std::string> strHolder(2);
+    auto& strCache = strHolder.getCache();
     strCache.put("pi", "3.14");
     strCache.put("e", "2.718");
     std::cout << "Test 6: " << (strCache.get("pi").value_or("") == "3.14" ? "PASS" : "FAIL") << std::endl;
@@ -37,8 +37,8 @@ void testLRUCache() {
 
 void multithreadedTest() {
     std::cout << "\nRunning multithreaded test...\n";
-    CacheFactory<int, int>::createCache("mt_test", 5);
-    auto& mtCache = CacheFactory<int, int>::getCache("mt_test");
+    CacheHolder<int, int> mtHolder(5);
+    auto& mtCache = mtHolder.getCache();
     std::vector<std::thread> threads;
     const int numThreads = 4;
     const int opsPerThread = 1000;
