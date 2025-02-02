@@ -1,5 +1,10 @@
 
-#include "tests.cpp"
+#include "lru_cache.h"
+#include <iostream>
+
+// Function declarations
+void testLRUCache();
+void multithreadedTest();
 
 int main() {
     std::cout << "Running LRU Cache tests...\n";
