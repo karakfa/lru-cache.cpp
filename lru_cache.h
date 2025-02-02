@@ -50,7 +50,7 @@ public:
      * @param key The key to look up
      * @return Optional containing the value if found, empty if not found
      */
-    std::optional<V> get(const K& key);
+    std::optional<const V> get(const K& key) const;
 
     /**
      * Returns cache hit/miss statistics
@@ -68,7 +68,7 @@ public:
      * @param key The key to insert/update
      * @param value The value to associate with the key
      */
-    void put(K key, V value);
+    void put(const K& key, const V& value);
 
     /**
      * Clears all entries from the cache
