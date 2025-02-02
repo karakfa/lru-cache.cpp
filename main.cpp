@@ -24,8 +24,8 @@ private:
     std::unordered_map<K, Node*> cache{};
     Node* head;
     Node* tail;
-    size_t hits{0};
-    size_t misses{0};
+    std::atomic<int> hits{0};
+    std::atomic<int> misses{0};
     mutable std::shared_mutex mutex;
 
     void removeNode(Node* node) {
@@ -64,7 +64,7 @@ public:
     LRUCache(int cap) : capacity(cap), head(nullptr), tail(nullptr) {}
 
     LRUCache() {
-        LRUCache(10);   // default size
+        LRUCache(DEFAULT_CACHE_SIZE);   // default size
     }
 
     std::optional<V> get(K key) {
@@ -131,6 +131,8 @@ public:
         std::lock_guard<std::recursive_mutex> lock(mutex);
         if (caches.find(name) == caches.end()) {
             caches[name] = std::make_unique<LRUCache<K, V>>(capacity);
+        } else {
+            // silently ignore duplicate requests...
         }
     }
 
@@ -143,9 +145,11 @@ public:
     }
 };
 
+// why are this still needed? 
 template <typename K, typename V>
 std::unordered_map<std::string, std::unique_ptr<LRUCache<K, V>>> CacheFactory<K,V>::caches;
 
+// why are this still needed? 
 template <typename K, typename V>
 std::recursive_mutex CacheFactory<K,V>::mutex;
 
