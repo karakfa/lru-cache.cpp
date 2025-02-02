@@ -73,11 +73,3 @@ void multithreadedTest() {
     std::cout << "Cache misses: " << misses << "\n";
     std::cout << "Successful retrievals: " << successCount << "\n";
 }
-
-int main() {
-    std::cout << "Running LRU Cache tests...\n";
-    testLRUCache();
-    multithreadedTest();
-    std::cout << "All tests done!\n";
-    return 0;
-}
