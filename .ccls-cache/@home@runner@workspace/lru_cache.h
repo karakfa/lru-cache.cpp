@@ -23,8 +23,8 @@ private:
     std::unordered_map<K, Node*> cache;
     Node* head;
     Node* tail;
-    std::atomic<int> hits{0};
-    std::atomic<int> misses{0};
+    mutable std::atomic<int> hits{0};
+    mutable std::atomic<int> misses{0};
     mutable std::shared_mutex mutex;
 
     void removeNode(Node* node);

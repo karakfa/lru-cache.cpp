@@ -39,8 +39,9 @@ std::optional<const V> LRUCache<K,V>::get(const K& key) const {
         return {};
     }
     hits++;
-    Node* node = cache[key];
-    moveToHead(node);
+    auto it = cache.find(key);
+    Node* node = it->second;
+    const_cast<LRUCache*>(this)->moveToHead(node);
     return node->value;
 }
 
