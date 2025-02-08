@@ -26,6 +26,7 @@ void testLRUCache() {
     std::cout << "First test completed\n";
     std::cout << "Cache hits: " << hits << "\n";
     std::cout << "Cache misses: " << misses << "\n";
+    cache.stop_cleaner_thread();
 
     CacheHolder<std::string, std::string> strHolder(2);
     auto& strCache = strHolder.getCache();
@@ -33,6 +34,8 @@ void testLRUCache() {
     strCache.put("e", "2.718");
     std::cout << "Test 6: " << (strCache.get("pi").value_or("") == "3.14" ? "PASS" : "FAIL") << std::endl;
     std::cout << "Test 7: " << (!strCache.get("phi").has_value() ? "PASS" : "FAIL") << std::endl;
+
+    strCache.stop_cleaner_thread();
 }
 
 void multithreadedTest() {
@@ -72,6 +75,7 @@ void multithreadedTest() {
     std::cout << "Cache hits: " << hits << "\n";
     std::cout << "Cache misses: " << misses << "\n";
     std::cout << "Successful retrievals: " << successCount << "\n";
+    mtCache.stop_cleaner_thread();
 }
 
 int main() {

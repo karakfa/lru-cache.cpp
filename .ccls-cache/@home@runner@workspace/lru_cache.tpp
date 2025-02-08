@@ -111,10 +111,7 @@ void LRUCache<K,V>::reset() {
 
 template<typename K, typename V>
 LRUCache<K,V>::~LRUCache() {
-    should_stop = true;
-    if (cleanup_thread.joinable()) {
-        cleanup_thread.join();
-    }
+    stop_cleaner_thread();
     doReset();
 }
 

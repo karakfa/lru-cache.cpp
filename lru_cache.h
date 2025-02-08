@@ -9,6 +9,7 @@
 #include <atomic>
 #include <chrono>
 #include <thread>
+#include <stdio.h>
 
 template<typename K, typename V>
 class LRUCache {
@@ -83,7 +84,8 @@ public:
     /**
      * Stops the cleanup thread
      */
-    void stop() {
+    void stop_cleaner_thread() {
+        std::cout << "trying to stop cleaner thread" << std::endl;
         should_stop = true;
         if (cleanup_thread.joinable()) {
             cleanup_thread.join();

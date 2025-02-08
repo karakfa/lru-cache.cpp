@@ -9,6 +9,7 @@
 #include <atomic>
 #include <chrono>
 #include <thread>
+#include <stdio.h>
 
 template<typename K, typename V>
 class LRUCache {
@@ -79,6 +80,17 @@ public:
      * Clears all entries from the cache
      */
     void reset();
+
+    /**
+     * Stops the cleanup thread
+     */
+    void stop_cleaner_thread() {
+        std::cout << "trying to stop cleaner thread" << std::endl;
+        should_stop = true;
+        if (cleanup_thread.joinable()) {
+            cleanup_thread.join();
+        }
+    }
 
     /**
      * Destructor - cleans up all allocated nodes
