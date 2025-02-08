@@ -11,6 +11,7 @@ void LRUCache<K,V>::cleanupWorker() {
             doReset();
         }
     }
+    std::cout << "cleanup worker exiting...";
 }
 
 template<typename K, typename V>
@@ -115,6 +116,5 @@ LRUCache<K,V>::~LRUCache() {
     doReset();
 }
 
-// CacheHolder is fully defined in the header
 
 #endif
