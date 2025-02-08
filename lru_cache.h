@@ -33,14 +33,17 @@ private:
     mutable std::shared_mutex mutex;
     std::thread cleanup_thread;
     volatile std::atomic<bool> should_stop{false};
+    std::condition_variable_any cv;
 
     void cleanupWorker() {
+        std::shared_mutex m;
         while (!should_stop) {
-            for (int i = 0; i < 60 && !should_stop; i++) {
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+            std::unique_lock<std::shared_mutex> lock(m);
+            if (cv.wait_for(lock, std::chrono::minutes(1), [this] { return should_stop; })) {
+                break;  // Interrupted
             }
             if (!should_stop) {
-                std::unique_lock<std::shared_mutex> lock(mutex);
+                std::unique_lock<std::shared_mutex> cache_lock(mutex);
                 doReset();
             }
         }
@@ -136,6 +139,7 @@ public:
     void stop_cleaner_thread() {
         std::cout << "trying to stop cleaner thread" << std::endl;
         should_stop = true;
+        cv.notify_one();
         if (cleanup_thread.joinable()) {
             std::cout << "cleaner thread is joinable, waiting to join" << std::endl;
             cleanup_thread.join();
