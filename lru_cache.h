@@ -38,20 +38,19 @@ private:
     std::condition_variable_any cv;
 
     void cleanupWorker() {
+        std::unique_lock<std::shared_mutex> lock(mutex);
         while (!should_stop) {
-            {
-                std::unique_lock<std::shared_mutex> lock(mutex);
-                if (cv.wait_for(
-                    lock,
-                    std::chrono::seconds(cleanup_interval),
-                    [this] { return should_stop; }))
-                {
-                    break;  // Interrupted
-                }
+            auto status = cv.wait_for(
+                lock,
+                std::chrono::seconds(cleanup_interval),
+                [this] { return should_stop; }
+            );
+            
+            if (status) { // timeout or stop requested
+                break;
             }
             
             if (!should_stop) {
-                std::unique_lock<std::shared_mutex> lock(mutex);
                 std::cout << "cleanup worker evicting entries...";
                 doReset();
             }
