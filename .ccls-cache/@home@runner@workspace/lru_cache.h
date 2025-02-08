@@ -89,6 +89,7 @@ public:
         std::cout << "trying to stop cleaner thread" << std::endl;
         should_stop = true;
         if (cleanup_thread.joinable()) {
+            std::cout << "cleaner thread is joinable, waiting to join" << std::endl;
             cleanup_thread.join();
         }
     }
