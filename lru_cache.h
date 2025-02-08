@@ -26,6 +26,9 @@ private:
     mutable std::atomic<int> hits{0};
     mutable std::atomic<int> misses{0};
     mutable std::shared_mutex mutex;
+    std::thread cleanup_thread;
+    std::atomic<bool> should_stop{false};
+    void cleanupWorker();
 
     void removeNode(Node* node);
     void addNodeToHead(Node* node);
