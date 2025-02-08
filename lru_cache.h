@@ -12,7 +12,6 @@
 #include <condition_variable>
 #include <chrono>
 #include <thread>
-#include <stdio.h>
 
 template<typename K, typename V>
 class LRUCache {
@@ -32,6 +31,8 @@ private:
     mutable std::atomic<int> hits{0};
     mutable std::atomic<int> misses{0};
     mutable std::shared_mutex mutex;
+
+    // related to timed reset of cache...
     std::thread cleanup_thread;
     volatile std::atomic<bool> should_stop{false};
     std::condition_variable_any cv;
@@ -40,7 +41,10 @@ private:
         std::shared_mutex m;
         while (!should_stop) {
             std::unique_lock<std::shared_mutex> lock(m);
-            if (cv.wait_for(lock, std::chrono::minutes(1), [this] { return should_stop; })) {
+            // cooperative interruption won't work here due to long duration sleep
+            // therefore implement interruptable sleep with the help of
+            // condition variable
+            if (cv.wait_for(lock, std::chrono::minutes(60), [this] { return should_stop; })) {
                 break;  // Interrupted
             }
             if (!should_stop) {
