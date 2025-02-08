@@ -38,23 +38,23 @@ private:
     std::condition_variable_any cv;
 
     void cleanupWorker() {
+        std::unique_lock<std::shared_mutex> lock(mutex, std::defer_lock);
         while (!should_stop) {
-            std::unique_lock<std::shared_mutex> lock(mutex);
-            // cooperative interruption won't work here due to long duration sleep
-            // therefore implement interruptable sleep with the help of
-            // condition variable
+            // Only lock for the condition variable wait
+            lock.lock();
             if (cv.wait_for(
                 lock, 
                 std::chrono::seconds(cleanup_interval), 
                 [this] { return should_stop; })) 
             {
+                lock.unlock();
                 break;  // Interrupted
             }
             if (!should_stop) {
-                std::unique_lock<std::shared_mutex> cache_lock(mutex);
                 std::cout << "cleanup worker evicting entries...";
                 doReset();
             }
+            lock.unlock();
         }
         std::cout << "cleanup worker exiting..." << std::endl;
     }
