@@ -38,9 +38,8 @@ private:
     std::condition_variable_any cv;
 
     void cleanupWorker() {
-        std::shared_mutex m;
         while (!should_stop) {
-            std::unique_lock<std::shared_mutex> lock(m);
+            std::unique_lock<std::shared_mutex> lock(mutex);
             // cooperative interruption won't work here due to long duration sleep
             // therefore implement interruptable sleep with the help of
             // condition variable
@@ -161,7 +160,16 @@ public:
 
     ~LRUCache() {
         stop_cleaner_thread();
-        doReset();
+        std::unique_lock<std::shared_mutex> lock(mutex);
+        Node* current = head;
+        head = nullptr;
+        tail = nullptr;
+        cache.clear();
+        while (current) {
+            Node* temp = current;
+            current = current->next;
+            delete temp;
+        }
     }
 };
 
