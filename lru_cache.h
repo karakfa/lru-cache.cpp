@@ -81,6 +81,16 @@ public:
     void reset();
 
     /**
+     * Stops the cleanup thread
+     */
+    void stop() {
+        should_stop = true;
+        if (cleanup_thread.joinable()) {
+            cleanup_thread.join();
+        }
+    }
+
+    /**
      * Destructor - cleans up all allocated nodes
      */
     ~LRUCache();
