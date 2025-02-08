@@ -36,13 +36,15 @@ private:
 
     void cleanupWorker() {
         while (!should_stop) {
-            std::this_thread::sleep_for(std::chrono::minutes(60));
+            for (int i = 0; i < 60 && !should_stop; i++) {
+                std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
             if (!should_stop) {
                 std::unique_lock<std::shared_mutex> lock(mutex);
                 doReset();
             }
         }
-        std::cout << "cleanup worker exiting...";
+        std::cout << "cleanup worker exiting..." << std::endl;
     }
 
     void removeNode(Node* node) {
