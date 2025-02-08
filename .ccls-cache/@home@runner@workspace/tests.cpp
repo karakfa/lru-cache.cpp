@@ -77,8 +77,9 @@ void multithreadedTest() {
 int main() {
     auto start = std::chrono::high_resolution_clock::now();
 
-    std::cout << "Running LRU Cache tests...\n";
+    std::cout << "\n=== Running Basic LRU Cache Tests ===\n";
     testLRUCache();
+    std::cout << "\n=== Running Multithreaded Tests ===\n";
     multithreadedTest();
 
     auto end = std::chrono::high_resolution_clock::now();
