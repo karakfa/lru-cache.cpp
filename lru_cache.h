@@ -1,4 +1,3 @@
-
 #ifndef LRU_CACHE_H
 #define LRU_CACHE_H
 
@@ -77,13 +76,16 @@ private:
     }
 
     void doReset() {
-        while (head) {
-            Node* temp = head;
-            head = head->next;
+        Node* current = head;
+        std::unordered_map<K, Node*> tempCache;
+        std::swap(cache, tempCache);
+        head = nullptr;
+        tail = nullptr;
+        while (current) {
+            Node* temp = current;
+            current = current->next;
             delete temp;
         }
-        cache.clear();
-        tail = nullptr;
         resetStats();
     }
 
