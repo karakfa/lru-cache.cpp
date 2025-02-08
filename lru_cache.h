@@ -24,7 +24,8 @@ private:
         Node(const K& k, const V& v) : key(k), value(v), prev(nullptr), next(nullptr) {}
     };
 
-    size_t capacity;
+    const size_t capacity;
+    const size_t cleanup_interval;
     std::unordered_map<K, Node*> cache;
     Node* head;
     Node* tail;
@@ -44,7 +45,7 @@ private:
             // cooperative interruption won't work here due to long duration sleep
             // therefore implement interruptable sleep with the help of
             // condition variable
-            if (cv.wait_for(lock, std::chrono::seconds(3), [this] { return should_stop; })) {
+            if (cv.wait_for(lock, std::chrono::seconds(cleanup_interval), [this] { return should_stop; })) {
                 break;  // Interrupted
             }
             if (!should_stop) {
@@ -87,7 +88,12 @@ private:
     }
 
 public:
-    explicit LRUCache(size_t cap) : capacity(cap), head(nullptr), tail(nullptr) {
+    explicit LRUCache(size_t cap, size_t cleanup_int_seconds) : 
+        capacity(cap),
+        cleanup_interval(cleanup_int_seconds),
+        head(nullptr), 
+        tail(nullptr) 
+    {
         cleanup_thread = std::thread(&LRUCache<K,V>::cleanupWorker, this);
     }
 
@@ -164,7 +170,8 @@ private:
     static const int DEFAULT_CACHE_SIZE{100};
 
 public:
-    CacheHolder(int capacity = DEFAULT_CACHE_SIZE) : cache(std::make_unique<LRUCache<K, V>>(capacity)) {}
+    CacheHolder(size_t capacity = DEFAULT_CACHE_SIZE) : cache(std::make_unique<LRUCache<K, V>>(capacity, 60*60)) {}
+    CacheHolder(size_t capacity, size_t cleanup_interval) : cache(std::make_unique<LRUCache<K, V>>(capacity, cleanup_interval)) {}
     LRUCache<K, V>& getCache() { return *cache; }
 };
 
