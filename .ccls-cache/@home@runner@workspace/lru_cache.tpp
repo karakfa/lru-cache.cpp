@@ -3,7 +3,20 @@
 #define LRU_CACHE_TPP
 
 template<typename K, typename V>
-LRUCache<K,V>::LRUCache(size_t cap) : capacity(cap), head(nullptr), tail(nullptr) {}
+void LRUCache<K,V>::cleanupWorker() {
+    while (!should_stop) {
+        std::this_thread::sleep_for(std::chrono::minutes(60));
+        if (!should_stop) {
+            std::unique_lock<std::shared_mutex> lock(mutex);
+            doReset();
+        }
+    }
+}
+
+template<typename K, typename V>
+LRUCache<K,V>::LRUCache(size_t cap) : capacity(cap), head(nullptr), tail(nullptr) {
+    cleanup_thread = std::thread(&LRUCache<K,V>::cleanupWorker, this);
+}
 
 template<typename K, typename V>
 LRUCache<K,V>::LRUCache() : LRUCache(100) {}
@@ -98,6 +111,10 @@ void LRUCache<K,V>::reset() {
 
 template<typename K, typename V>
 LRUCache<K,V>::~LRUCache() {
+    should_stop = true;
+    if (cleanup_thread.joinable()) {
+        cleanup_thread.join();
+    }
     doReset();
 }
 
