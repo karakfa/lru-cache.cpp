@@ -38,13 +38,16 @@ private:
     std::condition_variable_any cv;
 
     void cleanupWorker() {
-        std::shared_mutex m;
         while (!should_stop) {
-            std::unique_lock<std::shared_mutex> lock(m);
+            std::unique_lock<std::shared_mutex> lock(mutex);
             // cooperative interruption won't work here due to long duration sleep
             // therefore implement interruptable sleep with the help of
             // condition variable
-            if (cv.wait_for(lock, std::chrono::seconds(cleanup_interval), [this] { return should_stop; })) {
+            if (cv.wait_for(
+                lock, 
+                std::chrono::seconds(cleanup_interval), 
+                [this] { return should_stop; })) 
+            {
                 break;  // Interrupted
             }
             if (!should_stop) {
@@ -97,9 +100,10 @@ public:
         tail(nullptr) 
     {
         cleanup_thread = std::thread(&LRUCache<K,V>::cleanupWorker, this);
+        std::cout << "cleanup will be every " << cleanup_interval << " secs" << std::endl;
     }
 
-    LRUCache() : LRUCache(100) {}
+    LRUCache() : LRUCache(100, 60*60) {}
 
     std::optional<const V> get(const K& key) const {
         std::shared_lock<std::shared_mutex> lock(mutex);
@@ -110,7 +114,7 @@ public:
         hits++;
         auto it = cache.find(key);
         Node* node = it->second;
-        const_cast<LRUCache*>(this)->moveToHead(node);
+        moveToHead(node);
         return node->value;
     }
 
@@ -161,7 +165,16 @@ public:
 
     ~LRUCache() {
         stop_cleaner_thread();
-        doReset();
+        std::unique_lock<std::shared_mutex> lock(mutex);
+        Node* current = head;
+        head = nullptr;
+        tail = nullptr;
+        cache.clear();
+        while (current) {
+            Node* temp = current;
+            current = current->next;
+            delete temp;
+        }
     }
 };
 
@@ -170,10 +183,15 @@ class CacheHolder {
 private:
     std::unique_ptr<LRUCache<K, V>> cache;
     static const int DEFAULT_CACHE_SIZE{100};
+    static const int DEFAULT_CACHE_CLEANUP_INTERVAL{60*60};
 
 public:
-    CacheHolder(size_t capacity = DEFAULT_CACHE_SIZE) : cache(std::make_unique<LRUCache<K, V>>(capacity, 60*60)) {}
-    CacheHolder(size_t capacity, size_t cleanup_interval) : cache(std::make_unique<LRUCache<K, V>>(capacity, cleanup_interval)) {}
+    CacheHolder() : 
+        cache(std::make_unique<LRUCache<K, V>>(DEFAULT_CACHE_SIZE, DEFAULT_CACHE_CLEANUP_INTERVAL)) {}
+
+    CacheHolder(size_t capacity, size_t cleanup_interval = DEFAULT_CACHE_CLEANUP_INTERVAL) : 
+        cache(std::make_unique<LRUCache<K, V>>(capacity, cleanup_interval)) {}
+
     LRUCache<K, V>& getCache() { return *cache; }
 };
 
