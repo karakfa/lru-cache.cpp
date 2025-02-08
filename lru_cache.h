@@ -52,6 +52,7 @@ private:
             }
             if (!should_stop) {
                 std::unique_lock<std::shared_mutex> cache_lock(mutex);
+                std::cout << "cleanup worker evicting entries...";
                 doReset();
             }
         }
@@ -80,6 +81,7 @@ private:
 
     void doReset() {
         Node* current = head;
+        // swap with empty cache
         std::unordered_map<K, Node*> tempCache;
         std::swap(cache, tempCache);
         head = nullptr;
@@ -105,7 +107,7 @@ public:
 
     LRUCache() : LRUCache(100, 60*60) {}
 
-    std::optional<const V> get(const K& key) const {
+    std::optional<const V> get(const K& key) {
         std::shared_lock<std::shared_mutex> lock(mutex);
         if (cache.find(key) == cache.end()) {
             misses++;
@@ -161,9 +163,11 @@ public:
             std::cout << "cleaner thread is joinable, waiting to join" << std::endl;
             cleanup_thread.join();
         }
+        std::cout << "cleaner thread stopped." << std::endl;
     }
 
     ~LRUCache() {
+        std::cout << "in LRUCache destructor." << std::endl;
         stop_cleaner_thread();
         std::unique_lock<std::shared_mutex> lock(mutex);
         Node* current = head;
@@ -175,6 +179,7 @@ public:
             current = current->next;
             delete temp;
         }
+        std::cout << "LRUCache destroyed." << std::endl;
     }
 };
 

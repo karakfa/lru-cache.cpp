@@ -26,8 +26,10 @@ void testLRUCache() {
     std::cout << "First test completed\n";
     std::cout << "Cache hits: " << hits << "\n";
     std::cout << "Cache misses: " << misses << "\n";
-    cache.stop_cleaner_thread();
-
+   // cache.stop_cleaner_thread();
+}
+void testLRUCacheString()
+{
     CacheHolder<std::string, std::string> strHolder(2);
     auto& strCache = strHolder.getCache();
     strCache.put("pi", "3.14");
@@ -35,7 +37,7 @@ void testLRUCache() {
     std::cout << "Test 6: " << (strCache.get("pi").value_or("") == "3.14" ? "PASS" : "FAIL") << std::endl;
     std::cout << "Test 7: " << (!strCache.get("phi").has_value() ? "PASS" : "FAIL") << std::endl;
 
-    strCache.stop_cleaner_thread();
+  //  strCache.stop_cleaner_thread();
 }
 
 void multithreadedTest() {
@@ -68,6 +70,7 @@ void multithreadedTest() {
 
     for (auto& thread : threads) {
         thread.join();
+        std::cout << "thread " << thread.get_id() << "joined\n";
     }
 
     auto [hits, misses] = mtCache.getStats();
@@ -75,16 +78,17 @@ void multithreadedTest() {
     std::cout << "Cache hits: " << hits << "\n";
     std::cout << "Cache misses: " << misses << "\n";
     std::cout << "Successful retrievals: " << successCount << "\n";
-    mtCache.stop_cleaner_thread();
+  //  mtCache.stop_cleaner_thread();
 }
 
 void testCleanupWorker() {
-    CacheHolder<int, int> cleanupHolder(2, 100); // Reduced cleanup interval (100ms) for testing
+    CacheHolder<int, int> cleanupHolder(5, 1); // Reduced cleanup interval (1s) for testing
     auto& cleanupCache = cleanupHolder.getCache();
     cleanupCache.put(1,1);
-    std::this_thread::sleep_for(std::chrono::milliseconds(150)); // Wait longer than the cleanup interval
+    cleanupCache.put(2,2);
+    std::this_thread::sleep_for(std::chrono::seconds(5)); // Wait longer than the cleanup interval
     std::cout << "Cleanup test: " << (!cleanupCache.get(1).has_value() ? "PASS" : "FAIL") << std::endl;
-    cleanupCache.stop_cleaner_thread();
+  //  cleanupCache.stop_cleaner_thread();
 }
 
 int main() {
@@ -92,6 +96,8 @@ int main() {
 
     std::cout << "\n=== Running Basic LRU Cache Tests ===\n";
     testLRUCache();
+    std::cout << "\n=== Running Basic LRU Cache Tests with String Keys ===\n";
+    testLRUCacheString();
     std::cout << "\n=== Running Multithreaded Tests ===\n";
     multithreadedTest();
     std::cout << "\n=== Running Cleanup Worker Test ===\n";
