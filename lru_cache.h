@@ -44,7 +44,7 @@ private:
             // cooperative interruption won't work here due to long duration sleep
             // therefore implement interruptable sleep with the help of
             // condition variable
-            if (cv.wait_for(lock, std::chrono::minutes(60), [this] { return should_stop; })) {
+            if (cv.wait_for(lock, std::chrono::seconds(3), [this] { return should_stop; })) {
                 break;  // Interrupted
             }
             if (!should_stop) {

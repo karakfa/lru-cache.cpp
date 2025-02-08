@@ -78,6 +78,15 @@ void multithreadedTest() {
     mtCache.stop_cleaner_thread();
 }
 
+void testCleanupWorker() {
+    CacheHolder<int, int> cleanupHolder(2, 100); // Reduced cleanup interval (100ms) for testing
+    auto& cleanupCache = cleanupHolder.getCache();
+    cleanupCache.put(1,1);
+    std::this_thread::sleep_for(std::chrono::milliseconds(150)); // Wait longer than the cleanup interval
+    std::cout << "Cleanup test: " << (!cleanupCache.get(1).has_value() ? "PASS" : "FAIL") << std::endl;
+    cleanupCache.stop_cleaner_thread();
+}
+
 int main() {
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -85,6 +94,8 @@ int main() {
     testLRUCache();
     std::cout << "\n=== Running Multithreaded Tests ===\n";
     multithreadedTest();
+    std::cout << "\n=== Running Cleanup Worker Test ===\n";
+    testCleanupWorker();
 
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
