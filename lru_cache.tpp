@@ -15,7 +15,10 @@ void LRUCache<K,V>::cleanupWorker() {
 
 template<typename K, typename V>
 LRUCache<K,V>::LRUCache(size_t cap) : capacity(cap), head(nullptr), tail(nullptr) {
-    cleanup_thread = std::thread(&LRUCache::cleanupWorker, this);
+    if (cap == 0) {
+        throw std::invalid_argument("Cache capacity must be positive");
+    }
+    cleanup_thread = std::thread(&LRUCache<K,V>::cleanupWorker, this);
 }
 
 template<typename K, typename V>
