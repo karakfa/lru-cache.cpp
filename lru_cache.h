@@ -131,7 +131,7 @@ public:
         doReset();
     }
 
-    void stop() {
+    void stop_cleaner_thread() {
         std::cout << "trying to stop cleaner thread" << std::endl;
         should_stop = true;
         if (cleanup_thread.joinable()) {
@@ -141,7 +141,7 @@ public:
     }
 
     ~LRUCache() {
-        stop();
+        stop_cleaner_thread();
         doReset();
     }
 };

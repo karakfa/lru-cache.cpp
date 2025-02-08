@@ -1,3 +1,4 @@
+
 #ifndef LRU_CACHE_H
 #define LRU_CACHE_H
 
@@ -32,59 +33,104 @@ private:
     mutable std::shared_mutex mutex;
     std::thread cleanup_thread;
     volatile std::atomic<bool> should_stop{false};
-    void cleanupWorker();
 
-    void removeNode(Node* node);
-    void addNodeToHead(Node* node);
-    void moveToHead(Node* node);
-    void doReset();
+    void cleanupWorker() {
+        while (!should_stop) {
+            std::this_thread::sleep_for(std::chrono::minutes(60));
+            if (!should_stop) {
+                std::unique_lock<std::shared_mutex> lock(mutex);
+                doReset();
+            }
+        }
+        std::cout << "cleanup worker exiting...";
+    }
+
+    void removeNode(Node* node) {
+        if (node->prev) node->prev->next = node->next;
+        if (node->next) node->next->prev = node->prev;
+        if (node == head) head = node->next;
+        if (node == tail) tail = node->prev;
+    }
+
+    void addNodeToHead(Node* node) {
+        node->next = head;
+        node->prev = nullptr;
+        if (head) head->prev = node;
+        head = node;
+        if (!tail) tail = head;
+    }
+
+    void moveToHead(Node* node) {
+        removeNode(node);
+        addNodeToHead(node);
+    }
+
+    void doReset() {
+        while (head) {
+            Node* temp = head;
+            head = head->next;
+            delete temp;
+        }
+        cache.clear();
+        tail = nullptr;
+        resetStats();
+    }
 
 public:
-    /**
-     * Constructs an LRU cache with specified capacity
-     * @param cap The maximum number of key-value pairs the cache can hold
-     * @throws std::invalid_argument if capacity is 0
-     */
-    explicit LRUCache(size_t cap);
+    explicit LRUCache(size_t cap) : capacity(cap), head(nullptr), tail(nullptr) {
+        cleanup_thread = std::thread(&LRUCache<K,V>::cleanupWorker, this);
+    }
 
-    /**
-     * Constructs an LRU cache with default capacity of 100
-     */
-    LRUCache();
+    LRUCache() : LRUCache(100) {}
 
-    /**
-     * Retrieves a value associated with the given key
-     * @param key The key to look up
-     * @return Optional containing the value if found, empty if not found
-     */
-    std::optional<const V> get(const K& key) const;
+    std::optional<const V> get(const K& key) const {
+        std::shared_lock<std::shared_mutex> lock(mutex);
+        if (cache.find(key) == cache.end()) {
+            misses++;
+            return {};
+        }
+        hits++;
+        auto it = cache.find(key);
+        Node* node = it->second;
+        const_cast<LRUCache*>(this)->moveToHead(node);
+        return node->value;
+    }
 
-    /**
-     * Returns cache hit/miss statistics
-     * @return Pair of (hits, misses) counts
-     */
-    std::pair<size_t, size_t> getStats() const;
+    void put(const K& key, const V& value) {
+        std::unique_lock<std::shared_mutex> lock(mutex);
+        if (cache.find(key) != cache.end()) {
+            Node* node = cache[key];
+            node->value = value;
+            moveToHead(node);
+        } else {
+            Node* newNode = new Node(key, value);
+            if (cache.size() >= capacity) {
+                Node* tailNode = tail;
+                removeNode(tail);
+                cache.erase(tailNode->key);
+                delete tailNode;
+            }
+            cache[key] = newNode;
+            addNodeToHead(newNode);
+        }
+    }
 
-    /**
-     * Resets the hit/miss statistics to zero
-     */
-    void resetStats();
+    std::pair<size_t, size_t> getStats() const {
+        std::shared_lock<std::shared_mutex> lock(mutex);
+        return {hits, misses};
+    }
 
-    /**
-     * Inserts or updates a key-value pair in the cache
-     * @param key The key to insert/update
-     * @param value The value to associate with the key
-     */
-    void put(const K& key, const V& value);
+    void resetStats() {
+        std::unique_lock<std::shared_mutex> lock(mutex);
+        hits = 0;
+        misses = 0;
+    }
 
-    /**
-     * Clears all entries from the cache
-     */
-    void reset();
+    void reset() {
+        std::unique_lock<std::shared_mutex> lock(mutex);
+        doReset();
+    }
 
-    /**
-     * Stops the cleanup thread
-     */
     void stop_cleaner_thread() {
         std::cout << "trying to stop cleaner thread" << std::endl;
         should_stop = true;
@@ -94,10 +140,10 @@ public:
         }
     }
 
-    /**
-     * Destructor - cleans up all allocated nodes
-     */
-    ~LRUCache();
+    ~LRUCache() {
+        stop_cleaner_thread();
+        doReset();
+    }
 };
 
 template <typename K, typename V>
@@ -111,5 +157,4 @@ public:
     LRUCache<K, V>& getCache() { return *cache; }
 };
 
-#include "lru_cache.tpp"  // Template implementation
 #endif
