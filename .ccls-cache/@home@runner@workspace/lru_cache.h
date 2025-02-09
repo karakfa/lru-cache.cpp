@@ -34,32 +34,33 @@ private:
 
     // related to timed reset of cache...
     std::thread cleanup_thread;
-    volatile std::atomic<bool> should_stop{false};
+    volatile std::atomic<bool> runCleanup{true};
     std::condition_variable_any cv;
 
     void cleanupWorker() {
-        while (!should_stop) {
-            {
-                std::unique_lock<std::shared_mutex> lock(mutex);
-                if (cv.wait_for(
-                    lock,
-                    std::chrono::seconds(cleanup_interval),
-                    [this] { return should_stop; }))
-                {
-                    break;  // Interrupted
-                }
-            }
-            
-            if (!should_stop) {
-                std::unique_lock<std::shared_mutex> lock(mutex);
+        std::unique_lock<std::shared_mutex> lock(mutex);
+        while (runCleanup) {
+            std::cout << "before waitfor..." << std::endl;
+            auto status = cv.wait_for(
+                lock,
+                std::chrono::seconds(cleanup_interval),
+                [this] { return runCleanup; }
+            );
+            std::cout << "after waitfor ..." << std::endl;
+            // timer expired or interrupted, based on status, cleanup or exit
+            if (status) {
                 std::cout << "cleanup worker evicting entries...";
                 doReset();
+            } else {
+                std::cout << "shut down cyle, exiting...";
+                break;
             }
         }
         std::cout << "cleanup worker exiting..." << std::endl;
     }
 
     void removeNode(Node* node) {
+        std::cout << "removing Node..." << std::endl;
         if (node->prev) node->prev->next = node->next;
         if (node->next) node->next->prev = node->prev;
         if (node == head) head = node->next;
@@ -67,6 +68,7 @@ private:
     }
 
     void addNodeToHead(Node* node) {
+        std::cout << "addNodeToHead" << std::endl;
         node->next = head;
         node->prev = nullptr;
         if (head) head->prev = node;
@@ -80,6 +82,7 @@ private:
     }
 
     void doReset() {
+        std::cout << "doReset" << std::endl;
         Node* current = head;
         // swap with empty cache
         std::unordered_map<K, Node*> tempCache;
@@ -157,7 +160,7 @@ public:
 
     void stop_cleaner_thread() {
         std::cout << "trying to stop cleaner thread" << std::endl;
-        should_stop = true;
+        runCleanup = false;
         cv.notify_one();
         if (cleanup_thread.joinable()) {
             std::cout << "cleaner thread is joinable, waiting to join" << std::endl;

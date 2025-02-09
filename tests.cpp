@@ -5,7 +5,7 @@
 #include <chrono>
 
 void testLRUCache() {
-    CacheHolder<int, int> holder(2);
+    CacheHolder<int, int> holder(2,3600);
     auto& cache = holder.getCache();
 
     cache.put(1, 1);
@@ -36,6 +36,10 @@ void testLRUCacheString()
     strCache.put("e", "2.718");
     std::cout << "Test 6: " << (strCache.get("pi").value_or("") == "3.14" ? "PASS" : "FAIL") << std::endl;
     std::cout << "Test 7: " << (!strCache.get("phi").has_value() ? "PASS" : "FAIL") << std::endl;
+    auto [hits, misses] = strCache.getStats();
+    std::cout << "test completed\n";
+    std::cout << "Cache hits: " << hits << "\n";
+    std::cout << "Cache misses: " << misses << "\n";
 
   //  strCache.stop_cleaner_thread();
 }
