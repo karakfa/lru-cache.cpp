@@ -40,21 +40,17 @@ private:
     void cleanupWorker() {
         std::unique_lock<std::shared_mutex> lock(mutex);
         while (runCleanup) {
-            std::cout << "before waitfor..." << std::endl;
-            auto status = cv.wait_for(
-                lock,
-                std::chrono::seconds(cleanup_interval),
-                [this] { return runCleanup; }
-            );
-            std::cout << "after waitfor ..." << std::endl;
-            // timer expired or interrupted, based on status, cleanup or exit
-            if (status) {
-                std::cout << "cleanup worker evicting entries...";
-                doReset();
-            } else {
-                std::cout << "shut down cyle, exiting...";
+            // Wait with timeout, can be interrupted by cv.notify_one()
+            cv.wait_for(lock, 
+                       std::chrono::seconds(cleanup_interval),
+                       [this] { return !runCleanup; });
+            
+            if (!runCleanup) {
                 break;
             }
+            
+            std::cout << "cleanup worker evicting entries..." << std::endl;
+            doReset();
         }
         std::cout << "cleanup worker exiting..." << std::endl;
     }
