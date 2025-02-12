@@ -189,6 +189,17 @@ private:
     static std::unique_ptr<LRUCache<K, V>> cache;
     static const int DEFAULT_CACHE_SIZE{100};
     static const int DEFAULT_CACHE_CLEANUP_INTERVAL{60*60};
+};
+
+// Initialize static members
+template<typename K, typename V>
+std::unique_ptr<LRUCache<K, V>> CacheHolder<K, V>::cache;
+
+template<typename K, typename V>
+const int CacheHolder<K, V>::DEFAULT_CACHE_SIZE;
+
+template<typename K, typename V>
+const int CacheHolder<K, V>::DEFAULT_CACHE_CLEANUP_INTERVAL;
 
 public:
     CacheHolder() : 
