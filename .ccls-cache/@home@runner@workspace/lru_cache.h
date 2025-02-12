@@ -38,20 +38,21 @@ private:
     std::condition_variable_any cv;
 
     void cleanupWorker(std::stop_token stoken) {
+        std::unique_lock<std::shared_mutex> lock(mutex);
         while (!stoken.stop_requested()) {
-            {
-                std::unique_lock<std::shared_mutex> lock(mutex);
-                cv.wait_for(lock, 
-                           std::chrono::seconds(cleanup_interval),
-                           [&stoken] { return stoken.stop_requested(); });
+            auto status = cv.wait_for(lock, 
+                       std::chrono::seconds(cleanup_interval),
+                       [&stoken] { return stoken.stop_requested(); });
             
-                if (stoken.stop_requested()) {
-                    break;
-                }
-            
-                std::cout << "cleanup worker evicting entries..." << std::endl;
-                doReset();
+            if (stoken.stop_requested()) {
+                break;
             }
+            
+            std::cout << "cleanup worker evicting entries..." << std::endl;
+            // Temporarily release lock during reset to avoid deadlock
+            lock.unlock();
+            doReset();
+            lock.lock();
         }
         std::cout << "cleanup worker exiting..." << std::endl;
     }
@@ -79,12 +80,10 @@ private:
     }
 
     void doReset() {
+        std::unique_lock<std::shared_mutex> lock(mutex);
         std::cout << "doReset" << std::endl;
         Node* current = head;
-        // swap with empty cache
-        std::unordered_map<K, Node*> tempCache;
-        std::swap(cache, tempCache);
-        std::cout << "swapped cache" << std::endl;
+        cache.clear();
         head = nullptr;
         tail = nullptr;
         while (current) {
