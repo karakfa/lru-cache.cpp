@@ -33,24 +33,25 @@ private:
     mutable std::shared_mutex mutex;
 
     // related to timed reset of cache...
-    std::thread cleanup_thread;
+    std::jthread cleanup_thread;
     volatile std::atomic<bool> runCleanup{true};
     std::condition_variable_any cv;
 
-    void cleanupWorker() {
-        std::unique_lock<std::shared_mutex> lock(mutex);
-        while (runCleanup) {
-            // Wait with timeout, can be interrupted by cv.notify_one()
-            cv.wait_for(lock, 
-                       std::chrono::seconds(cleanup_interval),
-                       [this] { return !runCleanup; });
+    void cleanupWorker(std::stop_token stoken) {
+        while (!stoken.stop_requested()) {
+            {
+                std::unique_lock<std::shared_mutex> lock(mutex);
+                cv.wait_for(lock, 
+                           std::chrono::seconds(cleanup_interval),
+                           [&stoken] { return stoken.stop_requested(); });
             
-            if (!runCleanup) {
-                break;
+                if (stoken.stop_requested()) {
+                    break;
+                }
+            
+                std::cout << "cleanup worker evicting entries..." << std::endl;
+                doReset();
             }
-            
-            std::cout << "cleanup worker evicting entries..." << std::endl;
-            doReset();
         }
         std::cout << "cleanup worker exiting..." << std::endl;
     }
@@ -103,7 +104,7 @@ public:
         head(nullptr), 
         tail(nullptr) 
     {
-        cleanup_thread = std::thread(&LRUCache<K,V>::cleanupWorker, this);
+        cleanup_thread = std::jthread(&LRUCache<K,V>::cleanupWorker, this);
         std::cout << "cleanup will be every " << cleanup_interval << " secs" << std::endl;
     }
 
@@ -158,14 +159,9 @@ public:
     }
 
     void stop_cleaner_thread() {
-        std::cout << "trying to stop cleaner thread" << std::endl;
-        runCleanup = false;
+        std::cout << "stopping cleaner thread" << std::endl;
+        cleanup_thread.request_stop();
         cv.notify_one();
-        if (cleanup_thread.joinable()) {
-            std::cout << "cleaner thread is joinable, waiting to join" << std::endl;
-            cleanup_thread.join();
-        }
-        std::cout << "cleaner thread stopped." << std::endl;
     }
 
     ~LRUCache() {
