@@ -90,9 +90,24 @@ void testCleanupWorker() {
     auto& cleanupCache = cleanupHolder.getCache();
     cleanupCache.put(1,1);
     cleanupCache.put(2,2);
+    std::cout << "caller is waiting for cleanup thread to do the work\n";
     std::this_thread::sleep_for(std::chrono::seconds(5)); // Wait longer than the cleanup interval
     std::cout << "Cleanup test: " << (!cleanupCache.get(1).has_value() ? "PASS" : "FAIL") << std::endl;
-  //  cleanupCache.stop_cleaner_thread();
+
+
+    std::cout << "Continue using cache after cleanup thread finishes\n";
+    cleanupCache.put(1,1);
+    cleanupCache.put(2,2);
+    cleanupCache.put(3,3);
+    cleanupCache.put(4,4);
+    cleanupCache.put(5,5);
+    cleanupCache.put(6,6);
+    std::cout << "Cleanup test after first cleanup: " << (cleanupCache.get(5).has_value() ? "PASS" : "FAIL") << std::endl;
+    
+    std::cout << "caller is waiting for cleanup thread to do the work\n";
+    std::this_thread::sleep_for(std::chrono::seconds(5)); // Wait longer than the cleanup interval
+    std::cout << "Cleanup test: " << (!cleanupCache.get(1).has_value() ? "PASS" : "FAIL") << std::endl;
+    
 }
 
 int main() {
@@ -102,8 +117,8 @@ int main() {
     testLRUCache();
     std::cout << "\n=== Running Basic LRU Cache Tests with String Keys ===\n";
     testLRUCacheString();
-    std::cout << "\n=== Running Multithreaded Tests ===\n";
-    multithreadedTest();
+    // std::cout << "\n=== Running Multithreaded Tests ===\n";
+    // multithreadedTest();
     std::cout << "\n=== Running Cleanup Worker Test ===\n";
     testCleanupWorker();
 

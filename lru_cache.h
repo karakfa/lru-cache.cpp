@@ -83,6 +83,7 @@ private:
         // swap with empty cache
         std::unordered_map<K, Node*> tempCache;
         std::swap(cache, tempCache);
+        std::cout << "swapped cache" << std::endl;
         head = nullptr;
         tail = nullptr;
         while (current) {
@@ -90,7 +91,9 @@ private:
             current = current->next;
             delete temp;
         }
+        std::cout << "cleared entries" << std::endl;
         resetStats();
+        std::cout << "doReset done" << std::endl;
     }
 
 public:
@@ -144,9 +147,9 @@ public:
     }
 
     void resetStats() {
-        std::unique_lock<std::shared_mutex> lock(mutex);
         hits = 0;
         misses = 0;
+        std::cout << "resetting stats done." << std::endl;
     }
 
     void reset() {
