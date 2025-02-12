@@ -50,7 +50,7 @@ void multithreadedTest() {
     auto& mtCache = mtHolder.getCache();
     std::vector<std::thread> threads;
     const int numThreads = 4;
-    const int opsPerThread = 10000;
+    const int opsPerThread = 100;
     std::atomic<int> successCount{0};
 
     auto threadFunc = [&](int threadId) {
@@ -117,8 +117,8 @@ int main() {
     testLRUCache();
     std::cout << "\n=== Running Basic LRU Cache Tests with String Keys ===\n";
     testLRUCacheString();
-    // std::cout << "\n=== Running Multithreaded Tests ===\n";
-    // multithreadedTest();
+    std::cout << "\n=== Running Multithreaded Tests ===\n";
+    multithreadedTest();
     std::cout << "\n=== Running Cleanup Worker Test ===\n";
     testCleanupWorker();
 

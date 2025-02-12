@@ -186,7 +186,7 @@ public:
 template <typename K, typename V>
 class CacheHolder {
 private:
-    std::unique_ptr<LRUCache<K, V>> cache;
+    static std::unique_ptr<LRUCache<K, V>> cache;
     static const int DEFAULT_CACHE_SIZE{100};
     static const int DEFAULT_CACHE_CLEANUP_INTERVAL{60*60};
 

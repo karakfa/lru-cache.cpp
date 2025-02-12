@@ -33,18 +33,18 @@ private:
     mutable std::shared_mutex mutex;
 
     // related to timed reset of cache...
-    std::jthread cleanup_thread;
-    volatile std::atomic<bool> runCleanup{true};
+    std::thread cleanup_thread;
+    volatile std::atomic<bool> should_stop{false};
     std::condition_variable_any cv;
 
-    void cleanupWorker(std::stop_token stoken) {
+    void cleanupWorker() {
         std::unique_lock<std::shared_mutex> lock(mutex);
-        while (!stoken.stop_requested()) {
+        while (!should_stop) {
             auto status = cv.wait_for(lock, 
                        std::chrono::seconds(cleanup_interval),
-                       [&stoken] { return stoken.stop_requested(); });
+                       [this] { return should_stop; });
             
-            if (stoken.stop_requested()) {
+            if (status) {
                 break;
             }
             
@@ -103,7 +103,7 @@ public:
         head(nullptr), 
         tail(nullptr) 
     {
-        cleanup_thread = std::jthread(&LRUCache<K,V>::cleanupWorker, this);
+        cleanup_thread = std::thread(&LRUCache<K,V>::cleanupWorker, this);
         std::cout << "cleanup will be every " << cleanup_interval << " secs" << std::endl;
     }
 
@@ -159,8 +159,11 @@ public:
 
     void stop_cleaner_thread() {
         std::cout << "stopping cleaner thread" << std::endl;
-        cleanup_thread.request_stop();
+        should_stop = true;
         cv.notify_one();
+        if (cleanup_thread.joinable()) {
+            cleanup_thread.join();
+        }
     }
 
     ~LRUCache() {
@@ -183,7 +186,7 @@ public:
 template <typename K, typename V>
 class CacheHolder {
 private:
-    std::unique_ptr<LRUCache<K, V>> cache;
+    static std::unique_ptr<LRUCache<K, V>> cache;
     static const int DEFAULT_CACHE_SIZE{100};
     static const int DEFAULT_CACHE_CLEANUP_INTERVAL{60*60};
 
