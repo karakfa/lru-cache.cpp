@@ -4,9 +4,12 @@
 #include <vector>
 #include <chrono>
 
+
+
+
+
 void testLRUCache() {
-    CacheHolder<int, int> holder(2,3600);
-    auto& cache = holder.getCache();
+    static LRUCache<int,int> cache = LRUCache<int,int>(2,3600);
 
     cache.put(1, 1);
     cache.put(2, 2);
@@ -30,8 +33,8 @@ void testLRUCache() {
 }
 void testLRUCacheString()
 {
-    CacheHolder<std::string, std::string> strHolder(2);
-    auto& strCache = strHolder.getCache();
+    static LRUCache<std::string,std::string> strCache = LRUCache<std::string,std::string>(2,3600);
+
     strCache.put("pi", "3.14");
     strCache.put("e", "2.718");
     std::cout << "Test 6: " << (strCache.get("pi").value_or("") == "3.14" ? "PASS" : "FAIL") << std::endl;
@@ -46,8 +49,7 @@ void testLRUCacheString()
 
 void multithreadedTest() {
     std::cout << "\nRunning multithreaded test...\n";
-    CacheHolder<int, int> mtHolder(5);
-    auto& mtCache = mtHolder.getCache();
+    static LRUCache<int,int> mtCache = LRUCache<int,int>(2,3600);
     std::vector<std::thread> threads;
     const int numThreads = 4;
     const int opsPerThread = 100;
@@ -86,8 +88,9 @@ void multithreadedTest() {
 }
 
 void testCleanupWorker() {
-    CacheHolder<int, int> cleanupHolder(5, 1); // Reduced cleanup interval (1s) for testing
-    auto& cleanupCache = cleanupHolder.getCache();
+    static LRUCache<int,int> cleanupCache = LRUCache<int,int>(2,3);
+    // Reduced cleanup interval (3s) for testing
+    
     cleanupCache.put(1,1);
     cleanupCache.put(2,2);
     std::cout << "caller is waiting for cleanup thread to do the work\n";
