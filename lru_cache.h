@@ -44,7 +44,7 @@ private:
                        std::chrono::seconds(cleanup_interval),
                        [this] { return should_stop; });
             
-            if (should_stop) {
+            if (status) {
                 break;
             }
             
