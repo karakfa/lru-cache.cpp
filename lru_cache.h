@@ -124,7 +124,7 @@ public:
     void put(const K& key, const V& value) {
         std::cout << "putting " << key << " with value " << value << std::endl;
         std::unique_lock<std::shared_mutex> lock(mutex);
-        if (cache.find(key) == cache.end()) {
+        if (cache.find(key) != cache.end()) {
             auto node = cache[key];
             node->value = value;
             moveToHead(node);
