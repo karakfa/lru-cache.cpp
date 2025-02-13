@@ -12,7 +12,7 @@
 #include <chrono>
 #include <thread>
 
-typedef unsigned int uint;
+using uint = unsigned int;
 
 template<typename K, typename V>
 class LRUCache {
@@ -30,8 +30,8 @@ private:
     std::unordered_map<K, std::shared_ptr<Node>> cache;
     std::shared_ptr<Node> head;
     std::shared_ptr<Node> tail;
-    mutable std::atomic<int> hits{0};
-    mutable std::atomic<int> misses{0};
+    mutable std::atomic<uint> hits{0};
+    mutable std::atomic<uint> misses{0};
     mutable std::shared_mutex mutex;
 
     // related to timed reset of cache...
@@ -108,13 +108,10 @@ public:
 
     LRUCache() : LRUCache(100, 60*60) {}
 
-    bool contains(const K& key) {
-        return cache.find(key) == cache.end();
-    }
-
     std::optional<const V> get(const K& key) {
+        std::cout << "getting " << key <<  std::endl;
         std::shared_lock<std::shared_mutex> lock(mutex);
-        if (contains(key)) {
+        if (cache.find(key) == cache.end()) {
             misses++;
             return {};
         }
@@ -125,8 +122,9 @@ public:
     }
 
     void put(const K& key, const V& value) {
+        std::cout << "putting " << key << " with value " << value << std::endl;
         std::unique_lock<std::shared_mutex> lock(mutex);
-        if (contains(key)) {
+        if (cache.find(key) == cache.end()) {
             auto node = cache[key];
             node->value = value;
             moveToHead(node);
@@ -144,7 +142,7 @@ public:
         }
     }
 
-    std::pair<size_t, size_t> getStats() const {
+    std::pair<uint, uint> getStats() const {
         std::shared_lock<std::shared_mutex> lock(mutex);
         return {hits, misses};
     }

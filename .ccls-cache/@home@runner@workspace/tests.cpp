@@ -9,7 +9,7 @@
 
 
 void testLRUCache() {
-    static LRUCache<int,int> cache = LRUCache<int,int>(2,3600);
+    static LRUCache<uint,uint> cache = LRUCache<uint,uint>(2,3600);
 
     cache.put(1, 1);
     cache.put(2, 2);
