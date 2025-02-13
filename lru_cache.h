@@ -61,6 +61,7 @@ private:
 
     void removeNode(std::shared_ptr<Node> node) {
         std::cout << "removing Node..." << std::endl;
+        // if prevNode is around...
         if (auto prevNode = node->prev.lock()) {
             prevNode->next = node->next;
         }
@@ -125,10 +126,12 @@ public:
         std::cout << "putting " << key << " with value " << value << std::endl;
         std::unique_lock<std::shared_mutex> lock(mutex);
         if (cache.find(key) != cache.end()) {
+            // overwriting existing entry...
             auto node = cache[key];
             node->value = value;
             moveToHead(node);
         } else {
+            // make new entry...
             auto newNode = std::make_shared<Node>(key, value);
             if (cache.size() >= capacity) {
                 // drop the least recently used entry...
