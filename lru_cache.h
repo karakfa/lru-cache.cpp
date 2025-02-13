@@ -51,10 +51,12 @@ private:
             }
 
             std::cout << "cleanup worker evicting entries..." << std::endl;
-            // Temporarily release lock during reset to avoid deadlock
-            lock.unlock();
-            doReset();
-            lock.lock();
+            head.reset();
+            tail.reset();
+            cache.clear();
+            hits = 0;
+            misses = 0;
+            std::cout << "cleared entries" << std::endl;
         }
         std::cout << "cleanup worker exiting..." << std::endl;
     }
