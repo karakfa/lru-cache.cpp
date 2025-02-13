@@ -1,3 +1,4 @@
+
 #ifndef LRU_CACHE_H
 #define LRU_CACHE_H
 
@@ -18,16 +19,16 @@ private:
     struct Node {
         K key;
         V value;
-        Node* prev;
-        Node* next;
-        Node(const K& k, const V& v) : key(k), value(v), prev(nullptr), next(nullptr) {}
+        std::weak_ptr<Node> prev;
+        std::shared_ptr<Node> next;
+        Node(const K& k, const V& v) : key(k), value(v) {}
     };
 
     const size_t capacity;
     const size_t cleanup_interval;
-    std::unordered_map<K, Node*> cache;
-    Node* head;
-    Node* tail;
+    std::unordered_map<K, std::shared_ptr<Node>> cache;
+    std::shared_ptr<Node> head;
+    std::shared_ptr<Node> tail;
     mutable std::atomic<int> hits{0};
     mutable std::atomic<int> misses{0};
     mutable std::shared_mutex mutex;
@@ -44,7 +45,7 @@ private:
                        std::chrono::seconds(cleanup_interval),
                        [this] { return should_stop; });
             
-            if (status) {
+            if (should_stop) {
                 break;
             }
             
@@ -57,24 +58,30 @@ private:
         std::cout << "cleanup worker exiting..." << std::endl;
     }
 
-    void removeNode(Node* node) {
+    void removeNode(std::shared_ptr<Node> node) {
         std::cout << "removing Node..." << std::endl;
-        if (node->prev) node->prev->next = node->next;
-        if (node->next) node->next->prev = node->prev;
+        if (auto prevNode = node->prev.lock()) {
+            prevNode->next = node->next;
+        }
+        if (node->next) {
+            node->next->prev = node->prev;
+        }
         if (node == head) head = node->next;
-        if (node == tail) tail = node->prev;
+        if (node == tail) tail = (node->prev.lock());
     }
 
-    void addNodeToHead(Node* node) {
+    void addNodeToHead(std::shared_ptr<Node> node) {
         std::cout << "addNodeToHead" << std::endl;
         node->next = head;
-        node->prev = nullptr;
-        if (head) head->prev = node;
+        node->prev.reset();
+        if (head) {
+            head->prev = node;
+        }
         head = node;
         if (!tail) tail = head;
     }
 
-    void moveToHead(Node* node) {
+    void moveToHead(std::shared_ptr<Node> node) {
         removeNode(node);
         addNodeToHead(node);
     }
@@ -82,15 +89,9 @@ private:
     void doReset() {
         std::unique_lock<std::shared_mutex> lock(mutex);
         std::cout << "doReset" << std::endl;
-        Node* current = head;
+        head.reset();
+        tail.reset();
         cache.clear();
-        head = nullptr;
-        tail = nullptr;
-        while (current) {
-            Node* temp = current;
-            current = current->next;
-            delete temp;
-        }
         std::cout << "cleared entries" << std::endl;
         resetStats();
         std::cout << "doReset done" << std::endl;
@@ -99,9 +100,7 @@ private:
 public:
     explicit LRUCache(size_t cap, size_t cleanup_int_seconds) : 
         capacity(cap),
-        cleanup_interval(cleanup_int_seconds),
-        head(nullptr), 
-        tail(nullptr) 
+        cleanup_interval(cleanup_int_seconds)
     {
         cleanup_thread = std::thread(&LRUCache<K,V>::cleanupWorker, this);
         std::cout << "cleanup will be every " << cleanup_interval << " secs" << std::endl;
@@ -116,8 +115,7 @@ public:
             return {};
         }
         hits++;
-        auto it = cache.find(key);
-        Node* node = it->second;
+        auto node = cache[key];
         moveToHead(node);
         return node->value;
     }
@@ -125,16 +123,16 @@ public:
     void put(const K& key, const V& value) {
         std::unique_lock<std::shared_mutex> lock(mutex);
         if (cache.find(key) != cache.end()) {
-            Node* node = cache[key];
+            auto node = cache[key];
             node->value = value;
             moveToHead(node);
         } else {
-            Node* newNode = new Node(key, value);
+            auto newNode = std::make_shared<Node>(key, value);
             if (cache.size() >= capacity) {
-                Node* tailNode = tail;
-                removeNode(tail);
-                cache.erase(tailNode->key);
-                delete tailNode;
+                if (tail) {
+                    cache.erase(tail->key);
+                    removeNode(tail);
+                }
             }
             cache[key] = newNode;
             addNodeToHead(newNode);
@@ -170,19 +168,9 @@ public:
         std::cout << "in LRUCache destructor." << std::endl;
         stop_cleaner_thread();
         std::unique_lock<std::shared_mutex> lock(mutex);
-        Node* current = head;
-        head = nullptr;
-        tail = nullptr;
-        cache.clear();
-        while (current) {
-            Node* temp = current;
-            current = current->next;
-            delete temp;
-        }
+        doReset();
         std::cout << "LRUCache destroyed." << std::endl;
     }
 };
-
-
 
 #endif
