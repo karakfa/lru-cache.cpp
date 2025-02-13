@@ -183,21 +183,6 @@ public:
     }
 };
 
-template <typename K, typename V>
-class CacheHolder {
-private:
-    static std::unique_ptr<LRUCache<K, V>> cache;
-    static const int DEFAULT_CACHE_SIZE{100};
-    static const int DEFAULT_CACHE_CLEANUP_INTERVAL{60*60};
 
-public:
-    CacheHolder() : 
-        cache(std::make_unique<LRUCache<K, V>>(DEFAULT_CACHE_SIZE, DEFAULT_CACHE_CLEANUP_INTERVAL)) {}
-
-    CacheHolder(size_t capacity, size_t cleanup_interval = DEFAULT_CACHE_CLEANUP_INTERVAL) : 
-        cache(std::make_unique<LRUCache<K, V>>(capacity, cleanup_interval)) {}
-
-    LRUCache<K, V>& getCache() { return *cache; }
-};
 
 #endif
