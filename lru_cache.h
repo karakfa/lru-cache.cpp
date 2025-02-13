@@ -91,13 +91,13 @@ private:
     }
 
     void doReset() {
-        std::unique_lock<std::shared_mutex> lock(mutex);
         std::cout << "doReset" << std::endl;
         head.reset();
         tail.reset();
         cache.clear();
         std::cout << "cleared entries" << std::endl;
-        resetStats();
+        hits = 0;
+        misses = 0;
         std::cout << "doReset done" << std::endl;
     }
 
@@ -175,8 +175,10 @@ public:
     ~LRUCache() {
         std::cout << "in LRUCache destructor." << std::endl;
         stop_cleaner_thread();
-        std::unique_lock<std::shared_mutex> lock(mutex);
-        doReset();
+        {
+            std::unique_lock<std::shared_mutex> lock(mutex);
+            doReset();
+        }
         std::cout << "LRUCache destroyed." << std::endl;
     }
 };
