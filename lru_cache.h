@@ -19,7 +19,7 @@ private:
     struct Node {
         K key;
         V value;
-        std::weak_ptr<Node> prev;
+        std::weak_ptr<Node> prev; // to eliminate circular reference...
         std::shared_ptr<Node> next;
         Node(const K& k, const V& v) : key(k), value(v) {}
     };
@@ -45,7 +45,7 @@ private:
                        std::chrono::seconds(cleanup_interval),
                        [this] { return should_stop; });
             
-            if (should_stop) {
+            if (status) {
                 break;
             }
             
@@ -98,19 +98,22 @@ private:
     }
 
 public:
-    explicit LRUCache(size_t cap, size_t cleanup_int_seconds) : 
+    explicit LRUCache(uint cap, size_t cleanup_int_seconds) : 
         capacity(cap),
-        cleanup_interval(cleanup_int_seconds)
-    {
+        cleanup_interval(cleanup_int_seconds) {
         cleanup_thread = std::thread(&LRUCache<K,V>::cleanupWorker, this);
         std::cout << "cleanup will be every " << cleanup_interval << " secs" << std::endl;
     }
 
     LRUCache() : LRUCache(100, 60*60) {}
 
+    bool contains(const K& key) {
+        return cache.find(key) == cache.end()
+    }
+    
     std::optional<const V> get(const K& key) {
         std::shared_lock<std::shared_mutex> lock(mutex);
-        if (cache.find(key) == cache.end()) {
+        if (contains(key)) {
             misses++;
             return {};
         }
@@ -122,13 +125,14 @@ public:
 
     void put(const K& key, const V& value) {
         std::unique_lock<std::shared_mutex> lock(mutex);
-        if (cache.find(key) != cache.end()) {
+        if (contains(key)) {
             auto node = cache[key];
             node->value = value;
             moveToHead(node);
         } else {
             auto newNode = std::make_shared<Node>(key, value);
             if (cache.size() >= capacity) {
+                // drop the least recently used entry...
                 if (tail) {
                     cache.erase(tail->key);
                     removeNode(tail);
