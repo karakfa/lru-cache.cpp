@@ -96,8 +96,7 @@ private:
         tail.reset();
         cache.clear();
         std::cout << "cleared entries" << std::endl;
-        hits = 0;
-        misses = 0;
+        resetStats();
         std::cout << "doReset done" << std::endl;
     }
 
@@ -175,10 +174,7 @@ public:
     ~LRUCache() {
         std::cout << "in LRUCache destructor." << std::endl;
         stop_cleaner_thread();
-        {
-            std::unique_lock<std::shared_mutex> lock(mutex);
-            doReset();
-        }
+        reset();
         std::cout << "LRUCache destroyed." << std::endl;
     }
 };
